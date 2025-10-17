@@ -1,0 +1,15 @@
+# requirements.txt
+# Instalar con: pip install -r requirements.txt
+
+openai>=1.3.0
+beautifulsoup4>=4.12.0
+aiohttp>=3.9.0
+lxml>=4.9.0
+
+# Opcional: para usar Claude en lugar de OpenAI
+# anthropic>=0.7.0
+
+---
+
+# config.py
+# Configuración central del rastreador
