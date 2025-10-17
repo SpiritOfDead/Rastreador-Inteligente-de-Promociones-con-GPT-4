@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Promocion:
-    """Estructura de datos para una promoción"""
     titulo: str
     descripcion: str
     descuento: Optional[str]
@@ -42,7 +41,6 @@ class Promocion:
 
 
 class RastreadorPromociones:
-    """Rastreador web asíncrono para extraer promociones"""
     
     def __init__(self, api_key: str, modelo: str = "gpt-4o-mini"):
         """
@@ -59,7 +57,6 @@ class RastreadorPromociones:
         }
         
     async def obtener_contenido_html(self, session: aiohttp.ClientSession, url: str) -> Optional[str]:
-        """Obtiene el contenido HTML de una URL"""
         try:
             async with session.get(url, headers=self.headers, timeout=30) as response:
                 if response.status == 200:
@@ -72,14 +69,11 @@ class RastreadorPromociones:
             return None
     
     def extraer_texto_relevante(self, html: str, url: str) -> Dict[str, any]:
-        """Extrae texto relevante del HTML usando BeautifulSoup"""
         soup = BeautifulSoup(html, 'html.parser')
         
-        # Remover scripts y estilos
         for script in soup(["script", "style", "nav", "footer", "header"]):
             script.decompose()
         
-        # Buscar secciones comunes de promociones
         selectores_promo = [
             '.promo', '.promocion', '.oferta', '.descuento', '.deal',
             '.special-offer', '.sale', '[class*="promo"]', '[class*="offer"]',
@@ -94,12 +88,10 @@ class RastreadorPromociones:
                 if len(texto) > 20:  # Filtrar textos muy cortos
                     secciones_promo.append(texto)
         
-        # Si no se encuentran secciones específicas, obtener todo el texto del body
         if not secciones_promo:
             body = soup.find('body')
             if body:
                 texto_completo = body.get_text(strip=True, separator=' ')
-                # Limitar el texto para no sobrecargar el LLM
                 secciones_promo = [texto_completo[:5000]]
         
         return {
@@ -110,7 +102,6 @@ class RastreadorPromociones:
         }
     
     def analizar_con_llm(self, contenido: Dict[str, any]) -> List[Dict]:
-        """Utiliza LLM para extraer y estructurar promociones"""
         
         prompt = f"""Analiza el siguiente contenido de una página web y extrae TODAS las promociones, ofertas y descuentos activos.
 
@@ -165,7 +156,6 @@ Ejemplo de formato esperado:
             
             respuesta = response.choices[0].message.content.strip()
             
-            # Limpiar la respuesta por si incluye markdown
             respuesta = respuesta.replace('```json', '').replace('```', '').strip()
             
             promociones = json.loads(respuesta)
@@ -186,7 +176,6 @@ Ejemplo de formato esperado:
             return []
     
     async def procesar_sitio(self, session: aiohttp.ClientSession, url: str) -> List[Promocion]:
-        """Procesa un sitio web completo"""
         logger.info(f"Procesando: {url}")
         
         html = await self.obtener_contenido_html(session, url)
@@ -196,7 +185,6 @@ Ejemplo de formato esperado:
         contenido = self.extraer_texto_relevante(html, url)
         promociones_data = self.analizar_con_llm(contenido)
         
-        # Convertir a objetos Promocion
         promociones = []
         dominio = urlparse(url).netloc
         fecha_actual = datetime.now().isoformat()
@@ -230,7 +218,6 @@ Ejemplo de formato esperado:
             tareas = [self.procesar_sitio(session, url) for url in urls]
             resultados = await asyncio.gather(*tareas)
             
-            # Aplanar la lista de resultados
             todas_promociones = []
             for promociones in resultados:
                 todas_promociones.extend(promociones)
@@ -246,11 +233,9 @@ Ejemplo de formato esperado:
         
         logger.info(f"Guardadas {len(promociones)} promociones en {archivo}")
         
-        # Generar también un resumen
         self.generar_resumen(promociones)
     
     def generar_resumen(self, promociones: List[Promocion]):
-        """Genera un resumen de las promociones encontradas"""
         if not promociones:
             logger.info("No se encontraron promociones")
             return
@@ -259,7 +244,6 @@ Ejemplo de formato esperado:
         print(f"RESUMEN: {len(promociones)} promociones encontradas")
         print("="*80)
         
-        # Agrupar por sitio web
         por_sitio = {}
         for promo in promociones:
             if promo.sitio_web not in por_sitio:
@@ -282,7 +266,7 @@ async def main():
     # IMPORTANTE: Reemplaza con tu API key real
     API_KEY = "Tu Api-Key-Aqui"
     
-    # Lista de sitios web aprobados para rastrear
+    # Lista de sitios web Que vas a Rastrear 
     sitios_aprobados = [
         "https://www.olimpica.com/?gclsrc=aw.ds&&kb=ga_sb_14495418882_155523087115&gad_source=1&gad_campaignid=14495418882&gclid=CjwKCAjw0sfHBhB6EiwAQtv5qfWoppHwoTcHYQdcIvBDZ1kh175CtS4KzhXEUJGpjLxtppQbehGpFRoCeo8QAvD_BwE ",
         "https://www.promocajita.com/ ",
