@@ -6,17 +6,14 @@ import json
 import re
 
 class AnalizadorPromociones:
-    """Analiza promociones para generar insights de marketing"""
     
     def __init__(self, promociones: List[dict]):
         self.promociones = promociones
     
     def extraer_porcentaje_descuento(self, descuento: str) -> float:
-        """Extrae el porcentaje numérico del string de descuento"""
         if not descuento:
             return 0.0
         
-        # Buscar patrones como "20%", "hasta 50%", etc.
         match = re.search(r'(\d+(?:\.\d+)?)\s*%', descuento)
         if match:
             return float(match.group(1))
@@ -24,7 +21,6 @@ class AnalizadorPromociones:
         return 0.0
     
     def analizar_por_sitio(self) -> Dict:
-        """Analiza promociones agrupadas por sitio web"""
         por_sitio = defaultdict(list)
         
         for promo in self.promociones:
@@ -46,7 +42,6 @@ class AnalizadorPromociones:
         return analisis
     
     def analizar_tendencias_temporales(self) -> Dict:
-        """Analiza tendencias de promociones en el tiempo"""
         por_mes = defaultdict(list)
         
         for promo in self.promociones:
@@ -67,7 +62,6 @@ class AnalizadorPromociones:
         }
     
     def identificar_mejores_ofertas(self, top_n: int = 10) -> List[Dict]:
-        """Identifica las mejores ofertas por descuento"""
         ofertas_con_descuento = []
         
         for promo in self.promociones:
@@ -83,13 +77,11 @@ class AnalizadorPromociones:
                         'url': promo['url_origen']
                     })
         
-        # Ordenar por porcentaje de descuento
         ofertas_con_descuento.sort(key=lambda x: x['porcentaje'], reverse=True)
         
         return ofertas_con_descuento[:top_n]
     
     def analizar_categorias(self) -> Dict:
-        """Analiza distribución por categorías"""
         categorias = Counter()
         descuentos_por_cat = defaultdict(list)
         
@@ -111,7 +103,6 @@ class AnalizadorPromociones:
         }
     
     def generar_reporte_completo(self) -> Dict:
-        """Genera un reporte completo de análisis"""
         return {
             'resumen_general': {
                 'total_promociones': len(self.promociones),
@@ -127,11 +118,9 @@ class AnalizadorPromociones:
 
 
 class GeneradorReportes:
-    """Genera reportes en diferentes formatos"""
     
     @staticmethod
     def generar_html(analisis: Dict, archivo: str = 'reporte.html'):
-        """Genera un reporte HTML visualmente atractivo"""
         html = f"""
 <!DOCTYPE html>
 <html lang="es">
@@ -356,8 +345,6 @@ class GeneradorReportes:
         print(f"Reporte Markdown generado: {archivo}")
 
 
-# ejemplo_uso.py
-# Ejemplo completo de uso del sistema
 
 import asyncio
 from datetime import datetime
@@ -373,7 +360,6 @@ async def ejemplo_completo():
     print("SISTEMA DE RASTREO DE PROMOCIONES")
     print("="*80)
     
-    # Verificar API key
     if not Config.OPENAI_API_KEY:
         print("\nATENCIÓN: Debes configurar tu OPENAI_API_KEY")
         print("Opción 1: Variable de entorno")
@@ -381,7 +367,6 @@ async def ejemplo_completo():
         print("\nOpción 2: Editar config.py directamente")
         return
     
-    # 2. Inicializar componentes
     from rastreador import RastreadorPromociones
     
     rastreador = RastreadorPromociones(
@@ -389,36 +374,29 @@ async def ejemplo_completo():
         modelo=Config.LLM_MODEL
     )
     
-    # 3. Inicializar base de datos (opcional)
     db = DatabaseManager()
     
-    # 4. Ejecutar rastreo
     print(f"\nRastreando {len(Config.SITIOS_APROBADOS)} sitios web...")
     print("Esto puede tomar varios minutos...\n")
     
     promociones = await rastreador.rastrear_sitios(Config.SITIOS_APROBADOS)
     
-    # 5. Guardar resultados
     print(f"\nRastreo completado: {len(promociones)} promociones encontradas")
     rastreador.guardar_resultados(promociones, Config.ARCHIVO_SALIDA)
     
-    # 6. Guardar en base de datos
     if promociones:
         datos_promociones = [vars(p) for p in promociones]
         nuevas = db.guardar_promociones(datos_promociones)
         print(f" Guardadas {nuevas} nuevas promociones en la base de datos")
         
-        # 7. Generar análisis
         print("\n Generando análisis...")
         analizador = AnalizadorPromociones(datos_promociones)
         analisis = analizador.generar_reporte_completo()
         
-        # 8. Generar reportes
         generador = GeneradorReportes()
         generador.generar_html(analisis, 'reporte_promociones.html')
         generador.generar_markdown(analisis, 'reporte_promociones.md')
         
-        # 9. Mostrar estadísticas
         print("\n" + "="*80)
         print("ESTADÍSTICAS GENERALES")
         print("="*80)
